@@ -5,10 +5,11 @@ import doreanreceipts.receipts as receipts
 
 
 def main(bearer_token: str):
+    client = receipts.Client(bearer_token)
     is_running = True
     while is_running:
-        for r in receipts.gather(bearer_token):
-            print(r)
+        for receipt in client.gather():
+            print(receipt)
         time.sleep(5)
 
 

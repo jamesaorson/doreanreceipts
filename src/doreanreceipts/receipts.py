@@ -1,9 +1,11 @@
 __all__ = [
-    "gather",
+    "Client",
 ]
 
 import json
 from datetime import datetime
+
+import tweepy
 
 
 RECEIPTS_FILE = "receipts.json"
@@ -55,33 +57,34 @@ class Receipt:
             return set()
 
 
-def fetch_new_receipts(
-    bearer_token: str, existing_receipts: set[Receipt]
-) -> set[Receipt]:
-    # This function should implement the logic to fetch new receipts from an API.
-    # For now, we will return an empty set to simulate no new receipts.
-    # In a real implementation, you would use the bearer_token to authenticate
-    # and fetch data from the API.
-    return set(
-        Receipt(
-            author="example_author",
-            content="#doreancon nice!",
-            timestamp=datetime.now(),
-        )
-        for _ in range(3)  # Simulating 3 new receipts
-    )
+class Client:
+    def __init__(self, bearer_token: str):
+        self.bearer_token = bearer_token
+        self.auth = tweepy.OAuth2BearerHandler(bearer_token)
+        self.api = tweepy.API(self.auth)
+        self.existing_receipts = Receipt.from_file(RECEIPTS_FILE)
 
-
-def gather(bearer_token: str) -> list[Receipt]:
-    existing_receipts = Receipt.from_file(RECEIPTS_FILE)
-    new_receipts = fetch_new_receipts(bearer_token, existing_receipts)
-    receipts = new_receipts - existing_receipts
-    if new_receipts:
-        with open(RECEIPTS_FILE, "w+") as file:
-            json.dump(
-                [r.to_dict() for r in new_receipts | existing_receipts],
-                file,
-                indent=4,
-                sort_keys=True,
+    def _fetch_new_receipts(self) -> set[Receipt]:
+        return (
+            set(
+                Receipt(
+                    author="example_author",
+                    content="#doreancon nice!",
+                    timestamp=datetime.now(),
+                )
+                for _ in range(3)  # Simulating 3 new receipts
             )
-    return receipts
+            - self.existing_receipts
+        )
+
+    def gather(self) -> set[Receipt]:
+        new_receipts = self._fetch_new_receipts()
+        if new_receipts:
+            with open(RECEIPTS_FILE, "w+") as file:
+                json.dump(
+                    [r.to_dict() for r in new_receipts | self.existing_receipts],
+                    file,
+                    indent=4,
+                    sort_keys=True,
+                )
+        return new_receipts
