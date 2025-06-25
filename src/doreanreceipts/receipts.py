@@ -56,28 +56,32 @@ class Receipt:
         except Exception as e:
             return set()
 
+    @classmethod
+    def from_tweet(cls, tweet: tweepy.Tweet) -> "Receipt":
+        return cls(
+            author=tweet.author_id,
+            content=tweet.text,
+            timestamp=tweet.created_at,
+        )
+
 
 class Client:
     def __init__(self, bearer_token: str):
         self.bearer_token = bearer_token
-        self.auth = tweepy.OAuth2BearerHandler(bearer_token)
-        self.api = tweepy.API(self.auth)
-        self.existing_receipts = Receipt.from_file(RECEIPTS_FILE)
+        self.client = tweepy.Client(bearer_token=bearer_token)
+        self.existing_receipts: set[Receipt] = set()
 
     def _fetch_new_receipts(self) -> set[Receipt]:
-        return (
-            set(
-                Receipt(
-                    author="example_author",
-                    content="#doreancon nice!",
-                    timestamp=datetime.now(),
-                )
-                for _ in range(3)  # Simulating 3 new receipts
-            )
-            - self.existing_receipts
+        response = self.client.search_recent_tweets(
+            query="doreancon",
+            tweet_fields=["created_at", "author_id"],
+            max_results=10,
         )
+        receipts = set(Receipt.from_tweet(r) for r in response.data)
+        return receipts - self.existing_receipts
 
     def gather(self) -> set[Receipt]:
+        self.existing_receipts = Receipt.from_file(RECEIPTS_FILE)
         new_receipts = self._fetch_new_receipts()
         if new_receipts:
             with open(RECEIPTS_FILE, "w+") as file:
