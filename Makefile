@@ -18,7 +18,7 @@ venv/lib/python$(MIN_PYTHON_VERSION)/site-packages: venv/bin/pip
 venv: venv/lib/python$(MIN_PYTHON_VERSION)/site-packages ## Create the virtual environment and install dependencies
 
 .PHONY: run
-run: venv/lib/python$(MIN_PYTHON_VERSION)/site-packages ## Run the doreanreceipts command
+run: venv/lib/python$(MIN_PYTHON_VERSION)/site-packages env-X_BEARER_TOKEN ## Run the doreanreceipts command
 	. ./venv/bin/activate
 	doreanreceipts
 
@@ -31,6 +31,13 @@ PYTEST_ARGS ?= -vv --tb=short
 .PHONY: check/python-version
 check/python-version: ## Check the version of python
 	test $$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1,2) = $(MIN_PYTHON_VERSION) || (echo "Python $(MIN_PYTHON_VERSION) is required." && exit 1)
+
+env-%:
+	@if [ -z "$($*)" ]; then \
+		echo "Environment variable $* is not set"; \
+		exit 1; \
+	fi
+
 
 .PHONY: help
 help: ## Displays help info
