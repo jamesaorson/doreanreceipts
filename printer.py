@@ -1,8 +1,8 @@
 from datetime import datetime
 from io import TextIOWrapper
+import logging
 import os
 import json
-import sys
 import time
 
 SLEEP_SECONDS = int(os.getenv("SLEEP_SECONDS", 5))
@@ -10,6 +10,13 @@ SLEEP_SECONDS = int(os.getenv("SLEEP_SECONDS", 5))
 WATCH_DIR = os.path.expanduser("~/Downloads")
 HISTORY_FILE = "./history.json"
 PREFIX = "doreanreceipts"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    filename="doreanreceipts.log",
+    filemode="a",
+)
+logger = logging.getLogger()
 
 printed_files = set()
 
@@ -86,7 +93,7 @@ def main():
                         lp_file = open(lp_device)
                         break
                 if lp_device is not None:
-                    print(f"Opened printer device: {lp_device}", file=sys.stderr)
+                    logger.info(f"Opened printer device: {lp_device}")
             tweets: set[Tweet] = set()
             filenames = get_matching_filenames()
             for filename in filenames:
@@ -94,9 +101,9 @@ def main():
                     tweets.update(set(Tweet.from_dict(t) for t in json.load(f)))
             new_tweets = tweets.difference(history)
             if new_tweets:
-                print("Found new tweets:", len(new_tweets), file=sys.stderr)
+                logger.info("Found new tweets:", len(new_tweets))
             else:
-                print("No new tweets...", file=sys.stderr)
+                logger.info("No new tweets...")
 
             for t in sorted(
                 new_tweets, key=lambda t: datetime.fromisoformat(t.datetime)
