@@ -5,10 +5,10 @@ import json
 import sys
 import time
 
-SLEEP_SECONDS = int(os.getenv("SLEEP_SECONDS", "60"))
+SLEEP_SECONDS = int(os.getenv("SLEEP_SECONDS", 5))
 
 WATCH_DIR = os.path.expanduser("~/Downloads")
-HISTORY_FILE = os.path.expanduser("~/Downloads/history.json")
+HISTORY_FILE = "./history.json"
 PREFIX = "doreanreceipts"
 
 printed_files = set()
@@ -85,10 +85,8 @@ def main():
                         lp_device = os.path.join("/dev", dev)
                         lp_file = open(lp_device)
                         break
-                if lp_device is None:
-                    print("No /dev/lp* device found.")
-                else:
-                    print(f"Opened printer device: {lp_device}")
+                if lp_device is not None:
+                    print(f"Opened printer device: {lp_device}", file=sys.stderr)
             tweets: set[Tweet] = set()
             filenames = get_matching_filenames()
             for filename in filenames:
@@ -96,17 +94,21 @@ def main():
                     tweets.update(set(Tweet.from_dict(t) for t in json.load(f)))
             new_tweets = tweets.difference(history)
             if new_tweets:
-                print("Found new tweets:", len(new_tweets))
+                print("Found new tweets:", len(new_tweets), file=sys.stderr)
             else:
-                print("No new tweets:")
+                print("No new tweets...", file=sys.stderr)
 
             for t in sorted(
                 new_tweets, key=lambda t: datetime.fromisoformat(t.datetime)
             ):
-                print(t, file=lp_file if lp_file else sys.stdout)
+                print(t)
+                if lp_file:
+                    print(t, file=lp_file)
             history.update(new_tweets)
             with open(HISTORY_FILE, mode="w+") as f:
                 json.dump([t.as_dict() for t in history], f)
+            for filename in filenames:
+                os.remove(filename)
             time.sleep(SLEEP_SECONDS)
         finally:
             if lp_file:
