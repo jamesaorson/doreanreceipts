@@ -15,11 +15,12 @@
     "content_scripts": [
         {
             "matches": [
-                "https://x.com/*"
+                "https://x.com/search?q=doreancon*"
             ],
             "js": [
                 "scripts/scrape.js"
-            ]
+            ],
+            "run_at": "document_idle"
         }
     ]
 }

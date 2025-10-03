@@ -63,6 +63,7 @@ const scrape = () => {
       scrapeTweets(tweets);
       localStorage.setItem(LOCAL_STORAGE_KEY, dump(tweets));
       download(tweets);
+      window.location.reload();
       return;
     }
     window.scrollBy(0, scrollStep);
@@ -72,9 +73,4 @@ const scrape = () => {
   scrollAndScrape();
 }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message === 'scrape') {
-    scrape();
-    sendResponse({ status: 'done' });
-  }
-});
+setTimeout(scrape, 60 * 1000);
